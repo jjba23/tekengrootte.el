@@ -1,2 +1,4 @@
-* Lettertypen
+* tekengrootte.el
+
+Proportionally sized face sizes for Emacs.
 
