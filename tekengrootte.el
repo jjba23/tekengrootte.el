@@ -38,6 +38,8 @@
   "Tekengrootte scale to multiply."
   :type 'number)
 
+(defvar tekengrootte-set-scale-hook '())
+
 
 (defcustom tekengrootte-sizes
   '(
@@ -67,10 +69,13 @@ X is the numeric size to be adjusted to the right tekengrootte."
 
 
 (defun tekengrootte-set-scale-colossal ()
+  (interactive)
   (tekengrootte-set-scale 'colossal))
 (defun tekengrootte-set-scale-jumbo ()
+  (interactive)
   (tekengrootte-set-scale 'jumbo))
 (defun tekengrootte-set-scale-larger ()
+  (interactive)
   (tekengrootte-set-scale 'larger)) 
 (defun tekengrootte-set-scale-large ()
   (interactive)
@@ -89,7 +94,8 @@ X is the numeric size to be adjusted to the right tekengrootte."
   (let ((fs (alist-get k tekengrootte-sizes))
         )
     (message (format "setting font scale to %s: * %s" k fs))
-    (setq tekengrootte-scale fs)  
+    (setq tekengrootte-scale fs)
+    tekengrootte-set-scale-hook
     )
   
   )
