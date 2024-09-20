@@ -29,6 +29,15 @@
 
 ;;; Code:
 
+(defgroup tekengrootte ()
+  "Tekengrootte customization group."
+  :group 'tools
+  )
+
+(defcustom tekengrootte-scale 1.1
+  "Tekengrootte scale to multiply."
+  :type 'number)
+
 (provide 'tekengrootte)
 
 ;;; tekengrootte.el ends here
