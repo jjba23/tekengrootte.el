@@ -95,7 +95,7 @@ X is the numeric size to be adjusted to the right tekengrootte."
         )
     (message (format "setting font scale to %s: * %s" k fs))
     (setq tekengrootte-scale fs)
-    tekengrootte-set-scale-hook
+    (run-hooks tekengrootte-set-scale-hook)
     )
   
   )
