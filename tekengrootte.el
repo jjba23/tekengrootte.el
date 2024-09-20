@@ -38,6 +38,62 @@
   "Tekengrootte scale to multiply."
   :type 'number)
 
+
+(defcustom tekengrootte-sizes
+  '(
+    (nano . 0.7)
+    (tiny . 0.8)
+    (small . 0.9)
+    (regular . 1.1)
+    (large . 1.2)
+    (larger . 1.3)
+    (jumbo . 1.4)
+    (colossal . 1.5)
+    (t . 1.1))
+  "Tekengrootte sizes for scaling."
+  :type 'alist
+  )
+
+
+(defun tkngt (x)
+  "Alias for tekengrootte-mk-font-size passing X."
+  (tekengrootte-mk-font-size x))
+(defun tekengrootte-mk-font-size (x)
+  "Adapt a font size to a scaled Emacs compatible one.
+X is the numeric size to be adjusted to the right tekengrootte."
+  (interactive)
+  (* tekengrootte-scale x)
+  )
+
+
+(defun tekengrootte-set-scale-colossal ()
+  (tekengrootte-set-scale 'colossal))
+(defun tekengrootte-set-scale-jumbo ()
+  (tekengrootte-set-scale 'jumbo))
+(defun tekengrootte-set-scale-larger ()
+  (tekengrootte-set-scale 'larger)) 
+(defun tekengrootte-set-scale-large ()
+  (interactive)
+  (tekengrootte-set-scale 'large))
+(defun tekengrootte-set-scale-regular ()
+  (interactive)
+  (tekengrootte-set-scale 'regular))
+(defun tekengrootte-set-scale-small ()
+  (interactive)
+  (tekengrootte-set-scale 'small))
+(defun tekengrootte-set-scale-tiny ()
+  (interactive)
+  (tekengrootte-set-scale 'tiny))
+
+(defun tekengrootte-set-scale (k)
+  (let ((fs (alist-get k tekengrootte-sizes))
+        )
+    (message (format "setting font scale to %s: * %s" k fs))
+    (setq tekengrootte-scale fs)  
+    )
+  
+  )
+
 (provide 'tekengrootte)
 
 ;;; tekengrootte.el ends here
