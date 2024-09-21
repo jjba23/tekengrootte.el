@@ -38,7 +38,7 @@
   "Tekengrootte scale to multiply."
   :type 'number)
 
-(defvar tekengrootte-set-scale-hook '())
+(defvar tekengrootte-set-scale-hook nil)
 
 
 (defcustom tekengrootte-sizes
