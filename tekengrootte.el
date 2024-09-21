@@ -38,7 +38,8 @@
   "Tekengrootte scale to multiply."
   :type 'number)
 
-(defvar tekengrootte-set-scale-hook nil)
+(defvar tekengrootte-set-scale-hook nil
+  "Hooks to be run upon changing the text scale")
 
 
 (defcustom tekengrootte-sizes
@@ -95,7 +96,7 @@ X is the numeric size to be adjusted to the right tekengrootte."
         )
     (message (format "setting font scale to %s: * %s" k fs))
     (setq tekengrootte-scale fs)
-    (run-hooks tekengrootte-set-scale-hook)
+    (run-hooks 'tekengrootte-set-scale-hook)
     )
   
   )
