@@ -2,3 +2,6 @@
 
 Proportionally sized face sizes for Emacs.
 
+#+begin_html
+<img src="./resources/tekengrootte.webp"/>
+#+end_html
