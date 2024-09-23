@@ -36,10 +36,13 @@
 
 (defcustom tekengrootte-scale 1.1
   "Tekengrootte scale to multiply."
-  :type 'number)
+  :type 'number
+  :group 'tekengrootte)
 
-(defvar tekengrootte-set-scale-hook nil
-  "Hooks to be run upon changing the text scale")
+(defcustom tekengrootte-set-scale-hook nil
+  "Hooks to be run upon changing the text scale."
+  :type 'hook
+  :group 'tekengrootte)
 
 
 (defcustom tekengrootte-sizes
@@ -55,6 +58,7 @@
     (t . 1.1))
   "Tekengrootte sizes for scaling."
   :type 'alist
+  :group 'tekengrootte
   )
 
 
@@ -95,6 +99,7 @@ X is the numeric size to be adjusted to the right tekengrootte."
   (tekengrootte-set-scale 'nano))
 
 (defun tekengrootte-set-scale (k)
+  (interactive)
   (let ((fs (alist-get k tekengrootte-sizes))
         )
     (message (format "setting font scale to %s: * %s" k fs))
