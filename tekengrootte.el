@@ -1,12 +1,14 @@
-;;; tekengrootte.el --- proportionally sized faces -*- lexical-binding: t -*-
+;;; tekengrootte.el --- Proportionally sized faces -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024 Free Software Foundation, Inc.
 
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Author: Josep Bigorra <jjbigorra@gmail.com>
 ;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
-;; Keywords: font, face, size, proportional
-;; Package: emacs
+;; URL: https://github.com/jjba23/tekengrootte.el
+;; Keywords: faces
+;; Package: tekengrootte
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is part of GNU Emacs.
 
@@ -31,8 +33,7 @@
 
 (defgroup tekengrootte ()
   "Tekengrootte customization group."
-  :group 'tools
-  )
+  :group 'tools)
 
 (defcustom tekengrootte-scale 1.1
   "Tekengrootte scale to multiply."
@@ -58,20 +59,13 @@
     (t . 1.1))
   "Tekengrootte sizes for scaling."
   :type 'alist
-  :group 'tekengrootte
-  )
+  :group 'tekengrootte)
 
-
-(defun tkngt (x)
-  "Alias for tekengrootte-mk-font-size passing X."
-  (tekengrootte-mk-font-size x))
 (defun tekengrootte-mk-font-size (x)
   "Adapt a font size to a scaled Emacs compatible one.
 X is the numeric size to be adjusted to the right tekengrootte."
   (interactive)
-  (* tekengrootte-scale x)
-  )
-
+  (* tekengrootte-scale x))
 
 (defun tekengrootte-set-scale-colossal ()
   (interactive)
@@ -100,14 +94,10 @@ X is the numeric size to be adjusted to the right tekengrootte."
 
 (defun tekengrootte-set-scale (k)
   (interactive)
-  (let ((fs (alist-get k tekengrootte-sizes))
-        )
+  (let ((fs (alist-get k tekengrootte-sizes)))
     (message (format "setting font scale to %s: * %s" k fs))
     (setq tekengrootte-scale fs)
-    (run-hooks 'tekengrootte-set-scale-hook)
-    )
-  
-  )
+    (run-hooks 'tekengrootte-set-scale-hook)))
 
 (provide 'tekengrootte)
 
