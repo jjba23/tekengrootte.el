@@ -1,7 +1,52 @@
 * tekengrootte.el
 
-Proportionally sized face sizes for Emacs.
+/tekengrootte/ means character size in the Dutch language.
+
+#+begin_html
+<div>
+<img src="https://img.shields.io/badge/GNU%20Emacs-7F5AB6?logo=gnuemacs&logoColor=fff&style=plastic" alt="GNU Emacs"/>
+</div>
+#+end_html
+
+Proportionally sized face sizes for Emacs. In essence this package allows you to set certain face sizes to a dynamic value which can be adjusted.
+This means that you could semantically say, I want ~org-level-1~ headers to have a size of ~1.3x~ the scale. This scale varies depending on your choice, and ranges from ~nano~ to ~colossal~.
+All values are entirely customizable and should be tweaked to your needs.
 
 #+begin_html
 <img src="./resources/tekengrootte.webp"/>
 #+end_html
+
+** Installing
+
+This package is not (yet) available in popular Emacs repositories such as MELPA or ELPA.
+An example installation with Elpaca:
+
+#+begin_src emacs-lisp
+  (use-package tekengrootte 
+  :ensure (:host github :repo "jjba23/tekengrootte.el" :branch "trunk") 
+  :after (auto-dark)  
+  :bind (("C-c f c" . tekengrootte-set-scale-colossal) 
+         ("C-c f j" . tekengrootte-set-scale-jumbo) 
+         ("C-c f x" . tekengrootte-set-scale-larger) 
+         ("C-c f l" . tekengrootte-set-scale-large) 
+         ("C-c f r" . tekengrootte-set-scale-regular) 
+         ("C-c f s" . tekengrootte-set-scale-small) 
+         ("C-c f t" . tekengrootte-set-scale-tiny)
+	 ("C-c f n" . tekengrootte-set-scale-nano)) 
+  :hook ((tekengrootte-set-scale . (lambda () 
+                                     (my-set-faces)))) 
+  :config
+  (defun my-set-faces ()
+    "Adjust the base Emacs faces to my preferences.
+According to size, color and font family"
+    (set-face-attribute 'default nil 
+		        :height (round (tekengrootte-mk-font-size 114)) 
+		        :font jjba-font-mono)
+    (set-face-attribute 'variable-pitch nil 
+		        :height (tekengrootte-mk-font-size 1.2) 
+		        :font jjba-font-sans)
+    (set-face-attribute 'org-level-1 nil 
+		        :height (tekengrootte-mk-font-size 1.2)))
+  
+  (my-set-faces))
+#+end_src
