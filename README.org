@@ -2,19 +2,13 @@
 
 /tekengrootte/ means character size in the Dutch language.
 
-#+begin_html
-<div>
-<img src="https://img.shields.io/badge/GNU%20Emacs-7F5AB6?logo=gnuemacs&logoColor=fff&style=plastic" alt="GNU Emacs"/>
-</div>
-#+end_html
+[[https://img.shields.io/badge/GNU%20Emacs-7F5AB6?logo=gnuemacs&logoColor=fff&style=plastic]]
 
 Proportionally sized face sizes for Emacs. In essence this package allows you to set certain face sizes to a dynamic value which can be adjusted.
 This means that you could semantically say, I want ~org-level-1~ headers to have a size of ~1.3x~ the scale. This scale varies depending on your choice, and ranges from ~nano~ to ~colossal~.
 All values are entirely customizable and should be tweaked to your needs.
 
-#+begin_html
-<img src="./resources/tekengrootte.webp"/>
-#+end_html
+[[./resources/tekengrootte.webp]]
 
 ** Installing
 
@@ -23,7 +17,7 @@ An example installation with Elpaca:
 
 #+begin_src emacs-lisp
   (use-package tekengrootte 
-  :ensure (:host github :repo "jjba23/tekengrootte.el" :branch "trunk") 
+  :ensure (:host codeberg :repo "jjba23/tekengrootte.el" :branch "trunk") 
   :after (auto-dark)  
   :bind (("C-c f c" . tekengrootte-set-scale-colossal) 
          ("C-c f j" . tekengrootte-set-scale-jumbo) 
