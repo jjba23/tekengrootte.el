@@ -68,38 +68,47 @@ X is the numeric size to be adjusted to the right tekengrootte."
   (* tekengrootte-scale x))
 
 (defun tekengrootte-set-scale-colossal ()
+  "Set the font scale to the 'colossal' size."
   (interactive)
   (tekengrootte-set-scale 'colossal))
 
 (defun tekengrootte-set-scale-jumbo ()
+  "Set the font scale to the 'jumbo' size."
   (interactive)
   (tekengrootte-set-scale 'jumbo))
 
 (defun tekengrootte-set-scale-larger ()
+  "Set the font scale to the 'larger' size."
   (interactive)
   (tekengrootte-set-scale 'larger))
 
 (defun tekengrootte-set-scale-large ()
+  "Set the font scale to the 'large' size."
   (interactive)
   (tekengrootte-set-scale 'large))
 
 (defun tekengrootte-set-scale-regular ()
+  "Set the font scale to the 'regular' size."
   (interactive)
   (tekengrootte-set-scale 'regular))
 
 (defun tekengrootte-set-scale-small ()
+  "Set the font scale to the 'small' size."
   (interactive)
   (tekengrootte-set-scale 'small))
 
 (defun tekengrootte-set-scale-tiny ()
+  "Set the font scale to the 'tiny' size."
   (interactive)
   (tekengrootte-set-scale 'tiny))
 
 (defun tekengrootte-set-scale-nano ()
+  "Set the font scale to the 'nano' size."
   (interactive)
   (tekengrootte-set-scale 'nano))
 
 (defun tekengrootte-set-scale (k)
+  "Set the font scale to the size associated with key K."
   (interactive)
   (let ((fs (alist-get k tekengrootte-sizes)))
     (message (format "setting font scale to %s: * %s" k fs))
