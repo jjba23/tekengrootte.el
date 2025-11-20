@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2024 Free Software Foundation, Inc.
 
-;; Version: 0.1.1
+;; Version: 0.1.3
 ;; Author: Josep Bigorra <jjbigorra@gmail.com>
 ;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
 ;; URL: https://codeberg.org/jjba23/tekengrootte.el
@@ -70,24 +70,31 @@ X is the numeric size to be adjusted to the right tekengrootte."
 (defun tekengrootte-set-scale-colossal ()
   (interactive)
   (tekengrootte-set-scale 'colossal))
+
 (defun tekengrootte-set-scale-jumbo ()
   (interactive)
   (tekengrootte-set-scale 'jumbo))
+
 (defun tekengrootte-set-scale-larger ()
   (interactive)
-  (tekengrootte-set-scale 'larger)) 
+  (tekengrootte-set-scale 'larger))
+
 (defun tekengrootte-set-scale-large ()
   (interactive)
   (tekengrootte-set-scale 'large))
+
 (defun tekengrootte-set-scale-regular ()
   (interactive)
   (tekengrootte-set-scale 'regular))
+
 (defun tekengrootte-set-scale-small ()
   (interactive)
   (tekengrootte-set-scale 'small))
+
 (defun tekengrootte-set-scale-tiny ()
   (interactive)
   (tekengrootte-set-scale 'tiny))
+
 (defun tekengrootte-set-scale-nano ()
   (interactive)
   (tekengrootte-set-scale 'nano))
