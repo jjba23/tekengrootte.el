@@ -2,50 +2,189 @@
 #+author: Josep Bigorra
 #+email: jjbigorra@gmail.com
 #+language: en
-#+options: toc:nil
+#+options: toc:2
 
-[[https://jointhefreeworld.org/ggg/dist/emacs-lisp.svg]] [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]] 
+[[https://jointhefreeworld.org/ggg/dist/emacs-lisp.svg]] [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]
 
 /tekengrootte/ means character size in the Dutch language.
 
-Proportionally sized face sizes for Emacs. In essence this package allows you to set certain face sizes to a dynamic value which can be adjusted.
+Proportionally sized face sizes for Emacs.  Instead of hard-coding a face height, you
+express it as a multiple of one adjustable scale; changing the scale then resizes every
+face that was set up that way.
 
 [[https://jointhefreeworld.org/static-assets/other/img/tekengrootte-2025-11-20-12-34-42.png]]
 
-This means that you could semantically say, I want ~org-level-1~ headers to have a size of ~1.3x~ the scale. This scale varies depending on your choice, and ranges from ~nano~ to ~colossal~.
+For example, you could semantically say that you want ~org-level-1~ headers to be ~1.3x~
+the scale.  The scale itself is picked from a range of names, from ~nano~ to ~colossal~.
 All values are entirely customizable and should be tweaked to your needs.
 
-** Installing
+* How it works
+
+Two things do the work:
+
+- ~tekengrootte-mk-font-size~ returns a height scaled by the current scale, so it can be
+  used directly in the ~:height~ face attribute.  Relative heights stay floats, while
+  absolute heights (integers, such as ~114~) are rounded back to integers.
+- ~tekengrootte-set-scale~ switches the current scale to one of the names in
+  ~tekengrootte-sizes~ and then runs ~tekengrootte-set-scale-hook~.
+
+Faces are *not* re-applied by the package itself; hook your face-setting function to
+~tekengrootte-set-scale-hook~ and every face is refreshed when the scale changes.
+
+* Installing
 
 This package is not (yet) available in popular Emacs repositories such as MELPA or ELPA.
 An example installation with Elpaca:
 
 #+begin_src emacs-lisp
-  (use-package tekengrootte 
-  :ensure (:host codeberg :repo "jjba23/tekengrootte.el" :branch "trunk") 
-  :after (auto-dark)  
-  :bind (("C-c f c" . tekengrootte-set-scale-colossal) 
-         ("C-c f j" . tekengrootte-set-scale-jumbo) 
-         ("C-c f x" . tekengrootte-set-scale-larger) 
-         ("C-c f l" . tekengrootte-set-scale-large) 
-         ("C-c f r" . tekengrootte-set-scale-regular) 
-         ("C-c f s" . tekengrootte-set-scale-small) 
-         ("C-c f t" . tekengrootte-set-scale-tiny)
-	 ("C-c f n" . tekengrootte-set-scale-nano)) 
-  :hook ((tekengrootte-set-scale . (lambda () 
-                                     (my-set-faces)))) 
-  :config
-  (defun my-set-faces ()
-    "Adjust the base Emacs faces to my preferences.
-According to size, color and font family"
-    (set-face-attribute 'default nil 
-		        :height (round (tekengrootte-mk-font-size 114)) 
-		        :font jjba-font-mono)
-    (set-face-attribute 'variable-pitch nil 
-		        :height (tekengrootte-mk-font-size 1.2) 
-		        :font jjba-font-sans)
-    (set-face-attribute 'org-level-1 nil 
-		        :height (tekengrootte-mk-font-size 1.2)))
-  
-  (my-set-faces))
+  (defun my/set-faces ()
+    "Set my face heights relative to `tekengrootte-scale'."
+    (interactive)
+    (set-face-attribute 'default nil
+                        :height (tekengrootte-mk-font-size 114))
+    (set-face-attribute 'fixed-pitch nil
+                        :height (tekengrootte-mk-font-size 114))
+    (set-face-attribute 'variable-pitch nil
+                        :height (tekengrootte-mk-font-size 1.2))
+    (set-face-attribute 'org-level-1 nil
+                        :height (tekengrootte-mk-font-size 1.3)))
+
+  (use-package tekengrootte
+    :ensure (:host codeberg :repo "jjba23/tekengrootte.el" :branch "trunk")
+    :bind (("C-c f c" . tekengrootte-set-scale-colossal)
+           ("C-c f j" . tekengrootte-set-scale-jumbo)
+           ("C-c f x" . tekengrootte-set-scale-larger)
+           ("C-c f l" . tekengrootte-set-scale-large)
+           ("C-c f r" . tekengrootte-set-scale-regular)
+           ("C-c f s" . tekengrootte-set-scale-small)
+           ("C-c f t" . tekengrootte-set-scale-tiny)
+           ("C-c f n" . tekengrootte-set-scale-nano)
+           ("C-c f +" . tekengrootte-set-scale))
+    :hook (tekengrootte-set-scale-hook . my/set-faces)
+    :config
+    (my/set-faces))
 #+end_src
+
+Without ~use-package~ the same setup reads:
+
+#+begin_src emacs-lisp
+  (require 'tekengrootte)
+  (add-hook 'tekengrootte-set-scale-hook #'my/set-faces)
+  (my/set-faces)
+#+end_src
+
+* Usage
+
+** Changing the scale
+
+Every size has its own command, so it can be bound to a key:
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-c f l") #'tekengrootte-set-scale-large)
+#+end_src
+
+Or call ~tekengrootte-set-scale~ interactively, which asks for a size with completion
+(~M-x tekengrootte-set-scale~), and therefore also works for sizes you added yourself:
+
+#+begin_src emacs-lisp
+  (tekengrootte-set-scale 'jumbo)   ; programmatically
+  (call-interactively #'tekengrootte-set-scale) ; asks for a size
+#+end_src
+
+Asking for a size that does not exist signals a ~user-error~ and leaves the current scale
+untouched.
+
+** Available commands
+
+| Command                            | Size       | Default multiplier |
+|------------------------------------+------------+--------------------|
+| ~tekengrootte-set-scale-colossal~  | ~colossal~ | 1.5                |
+| ~tekengrootte-set-scale-jumbo~     | ~jumbo~    | 1.4                |
+| ~tekengrootte-set-scale-larger~    | ~larger~   | 1.25               |
+| ~tekengrootte-set-scale-large~     | ~large~    | 1.15               |
+| ~tekengrootte-set-scale-regular~   | ~regular~  | 1.05               |
+| ~tekengrootte-set-scale-small~     | ~small~    | 0.9                |
+| ~tekengrootte-set-scale-tiny~      | ~tiny~     | 0.8                |
+| ~tekengrootte-set-scale-nano~      | ~nano~     | 0.7                |
+| ~tekengrootte-set-scale~           | any of the above | –           |
+
+* Customizing
+
+All of the following are custom options, available through
+~M-x customize-group RET tekengrootte~.
+
+** ~tekengrootte-sizes~
+
+An alist of size names and their multipliers.  Add, remove or retune entries to taste:
+
+#+begin_src emacs-lisp
+  (setq tekengrootte-sizes
+        '((nano . 0.7)
+          (tiny . 0.8)
+          (small . 0.9)
+          (regular . 1.05)
+          (large . 1.15)
+          (larger . 1.25)
+          (jumbo . 1.4)
+          (colossal . 1.5)
+          (gigantic . 1.8)))
+#+end_src
+
+New names are immediately usable with ~M-x tekengrootte-set-scale~ (they are offered
+sorted by multiplier).  Entries whose value is not a number are ignored.  Note that the
+per-size commands listed above are fixed: pick a size with ~tekengrootte-set-scale~, or
+bind a lambda, if you add your own names.
+
+** ~tekengrootte-scale~
+
+The multiplier currently in use, initially ~1.1~.  Set it through
+~tekengrootte-set-scale~ rather than ~setq~, so that ~tekengrootte-set-scale-hook~ runs.
+
+** ~tekengrootte-set-scale-hook~
+
+Hook run after the scale changed.  Use it to re-apply the faces created with
+~tekengrootte-mk-font-size~, as in the installation example above.
+
+* Development
+
+The tasks live in [[./maak.scm][maak.scm]] and are run with [[https://codeberg.org/jjba23/maak][maak]]:
+
+#+begin_src shell
+  maak           # the whole gate: clean, lint, then test
+  maak lint      # byte-compile with warnings as errors, then checkdoc
+  maak test      # ERT test suite
+  maak compile   # byte-compile the package and its tests
+  maak clean     # remove the *.elc files
+  maak repl      # an Emacs with tekengrootte loaded
+  maak --list    # every task
+#+end_src
+
+~maak lint~ is a real gate: ~checkdoc-file~ only reports findings and always exits 0, so
+[[./test/tekengrootte-checkdoc.el][test/tekengrootte-checkdoc.el]] counts them and exits non-zero when there is at least one.
+Set ~EMACS~ to compile and test with another Emacs, as in ~EMACS=emacs-29 maak check~.
+
+A single test can be run from Emacs with:
+
+#+begin_src emacs-lisp
+  (load-file "test/tekengrootte-tests.el")
+  (ert-run-tests-interactively "tekengrootte-tests-set-scale")
+#+end_src
+
+* News
+
+** 0.2.0
+
+- ~tekengrootte-set-scale~ signals a ~user-error~ for unknown size names instead of
+  silently setting ~tekengrootte-scale~ to ~nil~, which used to break every following
+  call to ~tekengrootte-mk-font-size~.
+- ~tekengrootte-set-scale~ reads its size with completion when called interactively.
+- ~tekengrootte-mk-font-size~ rounds integer heights, so absolute sizes such as ~114~
+  stay valid ~:height~ values.
+- ~tekengrootte-mk-font-size~ is no longer an interactive command.
+- The meaningless ~(t . 1.1)~ entry was dropped from ~tekengrootte-sizes~.
+- All commands are autoloaded, so key bindings work before the package is loaded.
+- Added an ERT test suite, maak tasks and proper package headers.
+
+* License
+
+GPL-3.0-or-later.  See [[./COPYING][COPYING]].
