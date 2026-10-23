@@ -73,6 +73,15 @@ Without ~use-package~ the same setup reads:
   (my/set-faces)
 #+end_src
 
+It is also packaged with Nix. This repository carries the expression itself, ~default.nix~ next to ~tekengrootte.el~, so ~nix-build~ in this checkout builds the package; and it is part of [[https://codeberg.org/jjba23/nix-jointhefreeworld][nix-jointhefreeworld]], the set of Nix packages for everything Jointhefreeworld. The set's ~emacsOverlay~ adds it to ~emacsPackages~, byte-compiled and with its autoloads, so an Emacs that Nix builds gets it the way it gets any other package:
+
+#+begin_src nix
+  let
+    emacsPackages = pkgs.emacsPackages.overrideScope nix-jointhefreeworld.emacsOverlay;
+  in
+    emacsPackages.withPackages (epkgs: [ epkgs.tekengrootte ])
+  #+end_src
+
 * Usage
 
 ** Changing the scale
