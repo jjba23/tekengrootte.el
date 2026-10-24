@@ -84,6 +84,20 @@
   "Run the full quality gate (lint and tests)."
   (check))
 
+;; ====== Container tasks ======
+
+(define (container-build)
+  "Build the container image for tekengrootte-el."
+  ($ '("podman build -t tekengrootte-el .")))
+
+(define (container-run)
+  "Run the container image for tekengrootte-el."
+  ($ '("podman run --rm -it tekengrootte-el:latest")))
+
+(define (package-docker)
+  "Build the container image for tekengrootte-el."
+  (container-build))
+
 ;; Local Variables:
 ;; mode: scheme
 ;; End:
