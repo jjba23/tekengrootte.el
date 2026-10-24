@@ -27,7 +27,7 @@ depends=('emacs')
 makedepends=('emacs')
 checkdepends=('emacs')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('278a6a75131a1908e302e47d495b6e189558bd932ffa2b26396ee2bc23de52ac')
+sha256sums=('01b11245524ad2261eb9ec54dc359ce093220fbfcc59b515badb458faab73ee1')
 
 build() {
   cd "$srcdir/tekengrootte.el"
