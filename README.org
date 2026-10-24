@@ -19,6 +19,9 @@ the scale.  The scale itself is picked from a range of names, from ~nano~ to ~co
 All values are entirely customizable and should be tweaked to your needs.
 
 * How it works
+:PROPERTIES:
+:CUSTOM_ID: how-it-works
+:END:
 
 Two things do the work:
 
@@ -31,7 +34,85 @@ Two things do the work:
 Faces are *not* re-applied by the package itself; hook your face-setting function to
 ~tekengrootte-set-scale-hook~ and every face is refreshed when the scale changes.
 
+* Ways to install
+:PROPERTIES:
+:CUSTOM_ID: ways-to-install
+:END:
+
+/Four routes to the same 0.2.1, from the most automated to the most manual.  They all build the tag this README documents./
+
+** From the Guix channel
+:PROPERTIES:
+:CUSTOM_ID: from-the-guix-channel
+:END:
+*GNU Guix* is the functional package manager this project is developed with: a build is a pure function of its inputs, so the same recipe gives the same result everywhere, and an upgrade that goes wrong can be rolled back.
+
+The jointhefreeworld channel carries ~emacs-tekengrootte~ at 0.2.1, so a checkout of the channel is enough — no package definition to write:
+
+#+begin_src shell
+git clone https://codeberg.org/jjba23/guix-jointhefreeworld.git
+guix install -L ./guix-jointhefreeworld emacs-tekengrootte
+#+end_src
+
+Add the channel to ~$HOME/.config/guix/channels.scm~ (the channel's README has the four lines) and a plain ~guix install emacs-tekengrootte~ keeps working on every later ~guix pull~.
+
+** From the Nix flake
+:PROPERTIES:
+:CUSTOM_ID: from-the-nix-flake
+:END:
+*Nix* offers the same declarative, reproducible model with its own language, its own store and a binary cache, and it is a natural fit if the rest of your machine is already described in Nix.
+
+The jointhefreeworld flake builds this project with this repository's own expression, so the package cannot drift from the source:
+
+#+begin_src shell
+nix build github:jjba23/nix-jointhefreeworld#emacs-tekengrootte
+#+end_src
+
+The same attribute is available as an overlay, so ~pkgs.jointhefreeworld.emacs-tekengrootte~ works inside a NixOS or home-manager configuration too.
+
+** As a container image
+:PROPERTIES:
+:CUSTOM_ID: as-a-container-image
+:END:
+*Podman or Docker* is the route that puts nothing on the host: the ~Dockerfile~ in this repository builds the project in a builder stage and copies only what it installed into a runtime stage, so the image is small and the host keeps its own toolchain untouched.
+
+#+begin_src shell
+podman build -t tekengrootte-el .   # docker build -t tekengrootte-el . also works
+podman run --rm -it tekengrootte-el
+#+end_src
+
+The image's entry point is Emacs, with tekengrootte.el installed and byte-compiled, which makes it useful for a quick try and for reproducing a bug on a clean system.
+
+** As a distribution package
+:PROPERTIES:
+:CUSTOM_ID: as-a-distribution-package
+:END:
+*Debian, openSUSE and Arch* each get the project through their own package manager.  Packaging lives in this repository under ~packaging/~ and is pinned to the same release tag, so the recipes and the sources they build are versioned together.
+
+None of the three archives ships tekengrootte.el yet, so these are recipes to build rather than packages to install from a mirror:
+
+| Distribution   | Package              | How to build it                                                                     |
+|----------------+----------------------+-------------------------------------------------------------------------------------|
+| Debian, Ubuntu | ~elpa-tekengrootte~  | copy ~packaging/debian~ to the repository root, then ~dpkg-buildpackage -us -uc -b~ |
+| openSUSE       | ~emacs-tekengrootte~ | ~osc build~ with ~packaging/opensuse~                                               |
+| Arch           | ~emacs-tekengrootte~ | ~makepkg -si~ in ~packaging/arch~                                                   |
+
+Each recipe carries its own dependency list, so a missing library fails the build with its name rather than producing a package that cannot load.
+
+** Which one?
+:PROPERTIES:
+:CUSTOM_ID: which-one
+:END:
+- *Guix* if you want the toolchain the project is tested with, and the ability to roll back a bad upgrade.
+- *Nix* if the rest of your machine is already declarative; the flake pins nixpkgs and gives you a binary cache.
+- *Container* if you only want to try the release, or reproduce a report on a machine that has nothing installed.
+- *Distribution package* if you want the project managed by the same tool as the rest of your system, with its licence, manual page and launcher in the usual places.
+
+
 * Installing
+:PROPERTIES:
+:CUSTOM_ID: installing
+:END:
 
 This package is not (yet) available in popular Emacs repositories such as MELPA or ELPA.
 An example installation with Elpaca:
@@ -83,8 +164,14 @@ It is also packaged with Nix. This repository carries the expression itself, ~de
   #+end_src
 
 * Usage
+:PROPERTIES:
+:CUSTOM_ID: usage
+:END:
 
 ** Changing the scale
+:PROPERTIES:
+:CUSTOM_ID: changing-the-scale
+:END:
 
 Every size has its own command, so it can be bound to a key:
 
@@ -104,25 +191,34 @@ Asking for a size that does not exist signals a ~user-error~ and leaves the curr
 untouched.
 
 ** Available commands
+:PROPERTIES:
+:CUSTOM_ID: available-commands
+:END:
 
-| Command                            | Size       | Default multiplier |
-|------------------------------------+------------+--------------------|
-| ~tekengrootte-set-scale-colossal~  | ~colossal~ | 1.5                |
-| ~tekengrootte-set-scale-jumbo~     | ~jumbo~    | 1.4                |
-| ~tekengrootte-set-scale-larger~    | ~larger~   | 1.25               |
-| ~tekengrootte-set-scale-large~     | ~large~    | 1.15               |
-| ~tekengrootte-set-scale-regular~   | ~regular~  | 1.05               |
-| ~tekengrootte-set-scale-small~     | ~small~    | 0.9                |
-| ~tekengrootte-set-scale-tiny~      | ~tiny~     | 0.8                |
-| ~tekengrootte-set-scale-nano~      | ~nano~     | 0.7                |
-| ~tekengrootte-set-scale~           | any of the above | –           |
+| Command                           | Size             | Default multiplier |
+|-----------------------------------+------------------+--------------------|
+| ~tekengrootte-set-scale-colossal~ | ~colossal~       |                1.5 |
+| ~tekengrootte-set-scale-jumbo~    | ~jumbo~          |                1.4 |
+| ~tekengrootte-set-scale-larger~   | ~larger~         |               1.25 |
+| ~tekengrootte-set-scale-large~    | ~large~          |               1.15 |
+| ~tekengrootte-set-scale-regular~  | ~regular~        |               1.05 |
+| ~tekengrootte-set-scale-small~    | ~small~          |                0.9 |
+| ~tekengrootte-set-scale-tiny~     | ~tiny~           |                0.8 |
+| ~tekengrootte-set-scale-nano~     | ~nano~           |                0.7 |
+| ~tekengrootte-set-scale~          | any of the above |                  – |
 
 * Customizing
+:PROPERTIES:
+:CUSTOM_ID: customizing
+:END:
 
 All of the following are custom options, available through
 ~M-x customize-group RET tekengrootte~.
 
 ** ~tekengrootte-sizes~
+:PROPERTIES:
+:CUSTOM_ID: tekengrootte-sizes
+:END:
 
 An alist of size names and their multipliers.  Add, remove or retune entries to taste:
 
@@ -145,16 +241,25 @@ per-size commands listed above are fixed: pick a size with ~tekengrootte-set-sca
 bind a lambda, if you add your own names.
 
 ** ~tekengrootte-scale~
+:PROPERTIES:
+:CUSTOM_ID: tekengrootte-scale
+:END:
 
 The multiplier currently in use, initially ~1.1~.  Set it through
 ~tekengrootte-set-scale~ rather than ~setq~, so that ~tekengrootte-set-scale-hook~ runs.
 
 ** ~tekengrootte-set-scale-hook~
+:PROPERTIES:
+:CUSTOM_ID: tekengrootte-set-scale-hook
+:END:
 
 Hook run after the scale changed.  Use it to re-apply the faces created with
 ~tekengrootte-mk-font-size~, as in the installation example above.
 
 * Development
+:PROPERTIES:
+:CUSTOM_ID: development
+:END:
 
 The tasks live in [[./maak.scm][maak.scm]] and are run with [[https://codeberg.org/jjba23/maak][maak]]:
 
@@ -180,8 +285,14 @@ A single test can be run from Emacs with:
 #+end_src
 
 * News
+:PROPERTIES:
+:CUSTOM_ID: news
+:END:
 
 ** 0.2.0
+:PROPERTIES:
+:CUSTOM_ID: 0-2-0
+:END:
 
 - ~tekengrootte-set-scale~ signals a ~user-error~ for unknown size names instead of
   silently setting ~tekengrootte-scale~ to ~nil~, which used to break every following
@@ -195,5 +306,8 @@ A single test can be run from Emacs with:
 - Added an ERT test suite, maak tasks and proper package headers.
 
 * License
+:PROPERTIES:
+:CUSTOM_ID: license
+:END:
 
 GPL-3.0-or-later.  See [[./COPYING][COPYING]].
