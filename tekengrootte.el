@@ -4,7 +4,7 @@
 
 ;; Author: Josep Bigorra <jjbigorra@gmail.com>
 ;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
-;; Version: 0.2.1
+;; Version: 0.2.2
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: faces, convenience
 ;; URL: https://codeberg.org/jjba23/tekengrootte.el

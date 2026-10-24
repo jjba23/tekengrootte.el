@@ -17,7 +17,11 @@
 
 (define-module (maak)
   #:declarative? #t
-  #:use-module (maak maak))
+  #:use-module (maak maak)
+  ;; The container helpers are imported under a prefix because the tasks below
+  ;; are named the way maak exposes them on the command line -- `maak
+  ;; container-build' -- and a task may not shadow the helper it calls.
+  #:use-module ((maak container) #:prefix ct:))
 
 ;; ====== Maak constants ======
 
@@ -42,21 +46,25 @@
 
 (define (compile)
   "Byte-compile the package and its test suite."
-  ($ (list emacs-command "-Q" "--batch" "-L" "." "-L" "test"
-           "-f" "batch-byte-compile" source-file test-file)))
+  (run (list emacs-command "-Q" "--batch" "-L" "." "-L" "test"
+             "-f" "batch-byte-compile" source-file test-file)
+       #:verbose? #t))
 
 (define (test)
   "Run the ERT suite."
-  ($ (list emacs-command "-Q" "--batch" "-L" "." "-L" "test" "-l" test-file
-           "-f" "ert-run-tests-batch-and-exit")))
+  (run (list emacs-command "-Q" "--batch" "-L" "." "-L" "test" "-l" test-file
+             "-f" "ert-run-tests-batch-and-exit")
+       #:verbose? #t))
 
 (define (lint)
   "Compile with warnings turned into errors, then enforce checkdoc."
-  ($ (list emacs-command "-Q" "--batch" "-L" "." "-L" "test"
-           "--eval" "'(setq byte-compile-error-on-warn t)'"
-           "-f" "batch-byte-compile" source-file test-file))
-  ($ (list emacs-command "-Q" "--batch" "-L" "."
-           "-l" "test/tekengrootte-checkdoc.el")))
+  (run (list emacs-command "-Q" "--batch" "-L" "." "-L" "test"
+             "--eval" "(setq byte-compile-error-on-warn t)"
+             "-f" "batch-byte-compile" source-file test-file)
+       #:verbose? #t)
+  (run (list emacs-command "-Q" "--batch" "-L" "."
+             "-l" "test/tekengrootte-checkdoc.el")
+       #:verbose? #t))
 
 (define (clean)
   "Remove the byte-compiled files."
@@ -72,8 +80,8 @@
 
 (define (repl)
   "Open an Emacs with the package loaded for hacking."
-  ($ (list emacs-command "-Q" "-L" "."
-           "--eval" "'(progn (require (quote tekengrootte)) (message \"tekengrootte.el loaded: scale is %s\" tekengrootte-scale))'")))
+  (run (list emacs-command "-Q" "-L" "."
+             "--eval" "(progn (require (quote tekengrootte)) (message \"tekengrootte.el loaded: scale is %s\" tekengrootte-scale))")))
 
 (define (tasks)
   "List the available tasks."
@@ -88,11 +96,13 @@
 
 (define (container-build)
   "Build the container image for tekengrootte-el."
-  ($ '("podman build -t tekengrootte-el .")))
+  (ct:container-build "." #:tag "tekengrootte-el" #:verbose? #t))
 
 (define (container-run)
   "Run the container image for tekengrootte-el."
-  ($ '("podman run --rm -it tekengrootte-el:latest")))
+  (ct:container-run "tekengrootte-el:latest"
+                    #:interactive? #t
+                    #:tty? #t))
 
 (define (package-docker)
   "Build the container image for tekengrootte-el."

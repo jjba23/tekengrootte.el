@@ -16,7 +16,7 @@
 #
 
 Name:           emacs-tekengrootte
-Version:        0.2.1
+Version:        0.2.2
 Release:        0
 Summary:        Proportionally scaled face sizes for Emacs
 License:        GPL-3.0-or-later
