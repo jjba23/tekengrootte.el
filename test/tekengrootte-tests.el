@@ -5,7 +5,7 @@
 
 ;;; Author: Josep Bigorra <jjbigorra@gmail.com>
 ;;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
-;;; URL: https://codeberg.org/jjba23/tekengrootte.el
+;;; URL: https://github.com/jjba23/tekengrootte.el
 ;;; Package-Requires: ((emacs "25.1"))
 
 ;;; This file is not part of GNU Emacs.

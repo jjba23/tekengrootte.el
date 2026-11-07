@@ -1,3 +1,11 @@
+elpa-tekengrootte (0.4.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Relicensed to MIT, matching upstream LICENSE.
+  * New increase and decrease commands; Customize now runs the scale hook.
+
+ -- Josep Bigorra <jjbigorra@gmail.com>  Sat, 07 Nov 2026 10:56:09 +0100
+
 elpa-tekengrootte (0.2.2-1) unstable; urgency=medium
 
   * Sync with upstream 0.2.2.

@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: tekengrootte.el
 Upstream-Contact: Josep Bigorra <jjbigorra@gmail.com>
-Source: https://codeberg.org/jjba23/tekengrootte.el
+Source: https://github.com/jjba23/tekengrootte.el
 
 Files: *
 Copyright: 2024-2026 Josep Bigorra <jjbigorra@gmail.com>

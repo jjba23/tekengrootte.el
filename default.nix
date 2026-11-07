@@ -51,7 +51,7 @@ melpaBuild {
 
   meta = {
     description = "Proportionally scaled face sizes";
-    homepage = "https://codeberg.org/jjba23/tekengrootte.el";
+    homepage = "https://github.com/jjba23/tekengrootte.el";
     license = lib.licenses.mit;
     maintainers = [ lib.maintainers.jjba23 ];
   };

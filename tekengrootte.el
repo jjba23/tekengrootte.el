@@ -5,10 +5,10 @@
 
 ;;; Author: Josep Bigorra <jjbigorra@gmail.com>
 ;;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
-;;; Version: 0.2.2
+;;; Version: 0.4.0
 ;;; Package-Requires: ((emacs "25.1"))
 ;;; Keywords: faces, convenience
-;;; URL: https://codeberg.org/jjba23/tekengrootte.el
+;;; URL: https://github.com/jjba23/tekengrootte.el
 
 ;;; This file is not part of GNU Emacs.
 
@@ -43,7 +43,7 @@
   "Proportionally scaled face sizes."
   :group 'faces
   :prefix "tekengrootte-"
-  :link '(url-link "https://codeberg.org/jjba23/tekengrootte.el"))
+  :link '(url-link "https://github.com/jjba23/tekengrootte.el"))
 
 (defvar tekengrootte--loaded-p nil
   "Non-nil once this file has finished loading.
@@ -120,7 +120,7 @@ remaining entries are sorted by ascending multiplier."
   (mapcar #'car (tekengrootte--sizes)))
 
 (defun tekengrootte--size-scale (size)
-  "Return the multiplier that `tekengrootte-sizes' defines for SIZE.
+  "Return the multiplier for SIZE in `tekengrootte-sizes'.
 
 Signal a `user-error' when SIZE is not a usable size name."
   (let ((scale (cdr (assq size tekengrootte-sizes))))
@@ -269,9 +269,12 @@ the current scale untouched."
 
 ;;; History:
 
+;;; 0.4.0  Relicense to MIT, add the increase and decrease commands, run the
+;;; scale hook from Customize, and hold every copy of the version to the
+;;; header with the maak version tasks.
 ;;; 0.2.0  Signal an error for unknown sizes instead of storing nil,
 ;;; read the size with completion, round integer heights,
-;;; autoload all commands, add tests and a Makefile.
+;;; autoload all commands, add the ERT suite and the maak tasks.
 ;;; 0.1.1  First published version.
 
 (setq tekengrootte--loaded-p t)

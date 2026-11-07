@@ -37,7 +37,7 @@ ENV LANG=C.UTF-8 \
 
 LABEL org.opencontainers.image.title="tekengrootte-el" \
       org.opencontainers.image.description="Proportionally scaled face sizes for Emacs" \
-      org.opencontainers.image.url="https://codeberg.org/jjba23/tekengrootte.el" \
+      org.opencontainers.image.url="https://github.com/jjba23/tekengrootte.el" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${VERSION}"
 

@@ -5,11 +5,11 @@
 
 # Maintainer: Josep Bigorra <jjbigorra@gmail.com>
 pkgname=emacs-tekengrootte
-pkgver=0.2.2
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Proportionally scaled face sizes for Emacs"
 arch=('any')
-url="https://codeberg.org/jjba23/tekengrootte.el"
+url="https://github.com/jjba23/tekengrootte.el"
 license=('MIT')
 depends=('emacs')
 makedepends=('emacs')

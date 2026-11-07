@@ -96,8 +96,7 @@
   `((,spec-file . ,(string-append "Version:[ \t]+" version-regexp))
     (,pkgbuild-file . ,(string-append "pkgver=" version-regexp))
     (,readme-file . ,(string-append "the same " version-regexp
-                                    ", from the most automated"))
-    (,readme-file . ,(string-append "emacs-tekengrootte~ at " version-regexp))))
+                                    ", from the most automated"))))
 
 (define (read-text file)
   "Return the whole of FILE as a string, or a task error when it is not there.
@@ -324,7 +323,7 @@ once the release tag is pushed, so run `maak pkgsums' after that."
 The archive is made by the forge from the release tag, so it exists only
 once the tag is pushed: this runs after the release, not as part of it."
   (let* ((version (header-version))
-         (url (format #f "https://codeberg.org/jjba23/tekengrootte.el/archive/v~a.tar.gz"
+         (url (format #f "https://github.com/jjba23/tekengrootte.el/archive/v~a.tar.gz"
                       version))
          (archive (format #f "~a/tekengrootte-el-v~a.tar.gz"
                           (or (getenv "TMPDIR") "/tmp")

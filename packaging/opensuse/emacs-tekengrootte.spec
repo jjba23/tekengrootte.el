@@ -16,11 +16,11 @@
 #
 
 Name:           emacs-tekengrootte
-Version:        0.2.2
+Version:        0.4.0
 Release:        0
 Summary:        Proportionally scaled face sizes for Emacs
 License:        MIT
-URL:            https://codeberg.org/jjba23/tekengrootte.el
+URL:            https://github.com/jjba23/tekengrootte.el
 Source0:        tekengrootte.el-%{version}.tar.gz
 BuildRequires:  emacs
 Requires:       emacs
