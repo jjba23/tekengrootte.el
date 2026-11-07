@@ -1,0 +1,73 @@
+# tekengrootte.el
+
+# SPDX-License-Identifier: MIT
+# Copyright © Josep Bigorra <jjbigorra@gmail.com>
+
+# The quality gate, run on every push and pull request.
+#
+# This mirrors the `lint' and `test' tasks in maak.scm, spelled out here so
+# that CI needs nothing but an Emacs: Guile and maak stay a local
+# convenience.  The two runners carry two Emacs versions, which is enough to
+# notice code that only works on the one the project is developed with.
+
+name: check
+
+on:
+  push:
+    branches: [trunk, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: emacs on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Emacs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends emacs-nox
+          emacs --version
+
+      # `maak lint', first half: every byte-compiler warning is an error.
+      - name: Byte-compile with warnings as errors
+        run: >
+          emacs -Q --batch -L . -L test
+          --eval "(setq byte-compile-error-on-warn t)"
+          -f batch-byte-compile tekengrootte.el test/tekengrootte-tests.el
+
+      # `maak lint', second half: checkdoc findings fail the run.
+      - name: Checkdoc
+        run: emacs -Q --batch -L . -l test/tekengrootte-checkdoc.el
+
+      # A formatter that adds a space after the semicolons turns every
+      # `;;;###autoload' cookie into a plain comment, and the breakage is
+      # silent: the package still loads, it just stops autoloading.
+      - name: Autoload cookies
+        run: |
+          if grep -q '^;;; ###autoload' tekengrootte.el; then
+            echo "a space crept into the autoload cookies" >&2
+            exit 1
+          fi
+          grep -c '^;;;###autoload' tekengrootte.el
+
+      # `maak test'.
+      - name: ERT tests
+        run: >
+          emacs -Q --batch -L . -L test
+          -l test/tekengrootte-tests.el
+          -f ert-run-tests-batch-and-exit
