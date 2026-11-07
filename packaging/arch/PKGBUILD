@@ -15,22 +15,26 @@ depends=('emacs')
 makedepends=('emacs')
 checkdepends=('emacs')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
-sha256sums=('8ace1b0b05bfe015821367d6a7599d1165262a1aed05d2a01cb8956e169b77b4')
+sha256sums=('90a7eda82c769292674eb2c8d6161b1290f6e5e8526bc49f3d2b0b6a604609c3')
+
+# The forge names the unpacked directory after the repository and the tag, not
+# after the tarball ($pkgname-$pkgver), so every step enters it by hand.
+_srcdir="$srcdir/tekengrootte.el-$pkgver"
 
 build() {
-  cd "$srcdir/tekengrootte.el"
+  cd "$_srcdir"
 
   emacs -Q --batch -f batch-byte-compile tekengrootte.el
 }
 
 check() {
-  cd "$srcdir/tekengrootte.el"
+  cd "$_srcdir"
 
   emacs -Q --batch -L . -L test -l test/tekengrootte-tests.el -f ert-run-tests-batch-and-exit
 }
 
 package() {
-  cd "$srcdir/tekengrootte.el"
+  cd "$_srcdir"
 
   install -Dm644 tekengrootte.el "$pkgdir/usr/share/emacs/site-lisp/tekengrootte.el"
   install -Dm644 tekengrootte.elc "$pkgdir/usr/share/emacs/site-lisp/tekengrootte.elc"
