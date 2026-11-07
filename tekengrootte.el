@@ -1,53 +1,41 @@
 ;;; tekengrootte.el --- Proportionally scaled face sizes -*- lexical-binding: t -*-
 
-;; Copyright (C) 2024-2026 Josep Bigorra <jjbigorra@gmail.com>
+;;; SPDX-License-Identifier: MIT
+;;; Copyright © Josep Bigorra <jjbigorra@gmail.com>
 
-;; Author: Josep Bigorra <jjbigorra@gmail.com>
-;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
-;; Version: 0.2.2
-;; Package-Requires: ((emacs "25.1"))
-;; Keywords: faces, convenience
-;; URL: https://codeberg.org/jjba23/tekengrootte.el
+;;; Author: Josep Bigorra <jjbigorra@gmail.com>
+;;; Maintainer: Josep Bigorra <jjbigorra@gmail.com>
+;;; Version: 0.2.2
+;;; Package-Requires: ((emacs "25.1"))
+;;; Keywords: faces, convenience
+;;; URL: https://codeberg.org/jjba23/tekengrootte.el
 
-;; This file is not part of GNU Emacs.
-
-;; This program is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
 
-;; tekengrootte ("character size" in Dutch) keeps face heights
-;; proportional to a single, adjustable scale.
-;;
-;; Instead of hard-coding a face height such as 1.3, express it as a
-;; multiple of the current scale:
-;;
-;;   (set-face-attribute 'org-level-1 nil
-;;                       :height (tekengrootte-mk-font-size 1.2))
-;;
-;; When the scale is then changed with `tekengrootte-set-scale' (or with
-;; one of the `tekengrootte-set-scale-NAME' commands), every face set up
-;; this way grows or shrinks along with it.  The available sizes and
-;; their multipliers live in `tekengrootte-sizes'.
-;;
-;; Faces are not re-applied automatically, so hook your face-setting
-;; function to `tekengrootte-set-scale-hook':
-;;
-;;   (defun my/set-faces ()
-;;     (set-face-attribute 'default nil
-;;                         :height (tekengrootte-mk-font-size 114)))
-;;
-;;   (add-hook 'tekengrootte-set-scale-hook #'my/set-faces)
+;;; tekengrootte ("character size" in Dutch) keeps face heights
+;;; proportional to a single, adjustable scale.
+;;;
+;;; Instead of hard-coding a face height such as 1.3, express it as a
+;;; multiple of the current scale:
+;;;
+;;; (set-face-attribute 'org-level-1 nil
+;;;                     :height (tekengrootte-mk-font-size 1.2))
+;;;
+;;; When the scale is then changed with `tekengrootte-set-scale' (or with
+;;; one of the `tekengrootte-set-scale-NAME' commands), every face set up
+;;; this way grows or shrinks along with it.  The available sizes and
+;;; their multipliers live in `tekengrootte-sizes'.
+;;;
+;;; Faces are not re-applied automatically, so hook your face-setting
+;;; function to `tekengrootte-set-scale-hook':
+;;;
+;;; (defun my/set-faces ()
+;;;   (set-face-attribute 'default nil
+;;;                       :height (tekengrootte-mk-font-size 114)))
+;;;
+;;; (add-hook 'tekengrootte-set-scale-hook #'my/set-faces)
 
 ;;; Code:
 
@@ -57,12 +45,34 @@
   :prefix "tekengrootte-"
   :link '(url-link "https://codeberg.org/jjba23/tekengrootte.el"))
 
+(defvar tekengrootte--loaded-p nil
+  "Non-nil once this file has finished loading.
+
+`tekengrootte--set-scale' uses it to keep the scale hook out of load time:
+the `:set' function runs while the file is being evaluated, when the
+functions the hook calls are not defined yet.")
+
+(defun tekengrootte--set-scale (symbol value)
+  "Set SYMBOL to VALUE, running the scale hook when the value really changed.
+
+This is the `:set' function of `tekengrootte-scale', so that Customize takes
+the same path as `tekengrootte-set-scale' instead of leaving every face at
+the old size.  Loading the file is not a change the user asked for, and
+setting the value it already has paints nothing."
+  (let ((changed (and tekengrootte--loaded-p
+                      (not (equal value (default-value symbol))))))
+    (set-default symbol value)
+    (when changed
+      (run-hooks 'tekengrootte-set-scale-hook))
+    value))
+
 (defcustom tekengrootte-scale 1.1
   "Current multiplier used by `tekengrootte-mk-font-size'.
 
 Use `tekengrootte-set-scale' to set this to the multiplier of one
 of the sizes in `tekengrootte-sizes'."
   :type 'number
+  :set #'tekengrootte--set-scale
   :group 'tekengrootte)
 
 (defcustom tekengrootte-sizes
@@ -126,6 +136,43 @@ Signal a `user-error' when SIZE is not a usable size name."
                            (mapcar #'symbol-name (tekengrootte--size-names))
                            nil t)))
 
+(defun tekengrootte--beyond-p (cell step)
+  "Return non-nil when CELL lies one step away from the current scale.
+
+Positive STEP looks upwards, negative STEP downwards."
+  (if (> step 0)
+      (> (cdr cell) tekengrootte-scale)
+    (< (cdr cell) tekengrootte-scale)))
+
+(defun tekengrootte--sizes-past (step)
+  "Return the usable sizes on the STEP side of the current scale."
+  (delq nil (mapcar (lambda (cell)
+                      (when (tekengrootte--beyond-p cell step)
+                        cell))
+                    (tekengrootte--sizes))))
+
+(defun tekengrootte--neighbour (step)
+  "Return the size cell STEP places away from `tekengrootte-scale', or nil.
+
+Sizes are ascending, so stepping up takes the first one above the current
+scale and stepping down the last one below it.  Comparing against the scale
+instead of looking it up in the table is what lets a scale set by hand step
+to the nearest size on that side."
+  (let ((candidates (tekengrootte--sizes-past step)))
+    (if (> step 0) (car candidates) (car (last candidates)))))
+
+(defun tekengrootte--step-scale (step)
+  "Switch to the size STEP places away from the current one.
+
+Return the new scale, or the unchanged one when there is no size left in
+that direction."
+  (let ((next (tekengrootte--neighbour step)))
+    (if next
+        (tekengrootte-set-scale (car next))
+      (message "tekengrootte scale: %sx is already the %s size"
+               tekengrootte-scale (if (> step 0) "largest" "smallest"))
+      tekengrootte-scale)))
+
 (defun tekengrootte-mk-font-size (size)
   "Return SIZE scaled by the current `tekengrootte-scale'.
 
@@ -139,7 +186,7 @@ Relative heights are returned as floats:
 
   (tekengrootte-mk-font-size 1.2)"
   (if (integerp size)
-      (round (* tekengrootte-scale size))
+    (round (* tekengrootte-scale size))
     (* tekengrootte-scale size)))
 
 ;;;###autoload
@@ -208,12 +255,26 @@ the current scale untouched."
   (interactive)
   (tekengrootte-set-scale 'nano))
 
+;;;###autoload
+(defun tekengrootte-set-scale-increase ()
+  "Set the font scale to the next larger size in `tekengrootte-sizes'."
+  (interactive)
+  (tekengrootte--step-scale 1))
+
+;;;###autoload
+(defun tekengrootte-set-scale-decrease ()
+  "Set the font scale to the next smaller size in `tekengrootte-sizes'."
+  (interactive)
+  (tekengrootte--step-scale -1))
+
 ;;; History:
 
-;; 0.2.0  Signal an error for unknown sizes instead of storing nil,
-;;        read the size with completion, round integer heights,
-;;        autoload all commands, add tests and a Makefile.
-;; 0.1.1  First published version.
+;;; 0.2.0  Signal an error for unknown sizes instead of storing nil,
+;;; read the size with completion, round integer heights,
+;;; autoload all commands, add tests and a Makefile.
+;;; 0.1.1  First published version.
+
+(setq tekengrootte--loaded-p t)
 
 (provide 'tekengrootte)
 

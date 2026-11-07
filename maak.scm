@@ -1,24 +1,26 @@
 ;; tekengrootte.el
 
+;; SPDX-License-Identifier: MIT
 ;; Copyright © Josep Bigorra <jjbigorra@gmail.com>
-
-;; tekengrootte.el is free software: you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
-
-;; tekengrootte.el is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-
-;; You should have received a copy of the GNU General Public License
-;; along with tekengrootte.el.  If not, see <https://www.gnu.org/licenses/>.
 
 (define-module (maak)
   #:declarative? #t
+  ;; Only these are tasks: with an export list maak lists and runs exactly these,
+  ;; so the helpers below (`read-text', `patterns-of', `slurp') stay procedures
+  ;; rather than appearing on the command line as if they were runnable.
+  #:export (compile test lint clean check repl tasks default
+                   version version-check sync-version pkgsums
+                   agents
+                   container-build container-run package-docker)
   #:use-module (maak maak)
   #:use-module ((ice-9 rdelim) #:select (read-line))
+  ;; Zero-padded dates for the changelog entry, and the captures below.
+  #:use-module (ice-9 format)
+  #:use-module (ice-9 regex)
+  ;; `get-string-all', for reading a whole file into a string.
+  #:use-module (ice-9 textual-ports)
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-13)
   ;; The container helpers are imported under a prefix because the tasks below
   ;; are named the way maak exposes them on the command line -- `maak
   ;; container-build' -- and a task may not shadow the helper it calls.
@@ -42,6 +44,212 @@
 ;; What byte-compilation leaves behind.
 (define compiled-files
   '("tekengrootte.elc" "test/tekengrootte-tests.elc"))
+
+;; ====== The version's copies ======
+;;
+;; The version is written by hand once, in the package header: Emacs reads it
+;; there, and so does default.nix.  The spec, the PKGBUILD, the README and the
+;; Debian changelog cannot read that header, so they carry copies;
+;; `sync-version' writes them and `version-check' holds them to it.  A copy is
+;; found by a regular expression rather than by its line number, and only the
+;; captured span is ever rewritten, so each file keeps its own wording and
+;; alignment.  A pattern that stops matching is reported instead of silently
+;; checking nothing.
+
+(define version-source
+  "tekengrootte.el")
+
+(define readme-file
+  "README.org")
+
+(define spec-file
+  "packaging/opensuse/emacs-tekengrootte.spec")
+
+(define pkgbuild-file
+  "packaging/arch/PKGBUILD")
+
+(define changelog-file
+  "packaging/debian/changelog")
+
+(define control-file
+  "packaging/debian/control")
+
+(define version-regexp
+  "([0-9]+\\.[0-9]+\\.[0-9]+)")
+
+;; The header's own copy, which is the one written by hand.  The semicolons are
+;; matched loosely: how many of them lead a comment is the file's formatting,
+;; not a fact this task should break on.
+(define header-pattern
+  (string-append ";;+[ \t]*Version:[ \t]+" version-regexp))
+
+;; The newest changelog entry, and only that one: older entries are history and
+;; keep their own version.
+(define changelog-pattern
+  "elpa-tekengrootte \\(([0-9]+\\.[0-9]+\\.[0-9]+)-[0-9]+\\)")
+
+;; The Arch checksum line, whose 64 hexadecimal characters are the capture.
+(define pkgsums-pattern
+  "sha256sums=\\('([0-9a-f]{64})'\\)")
+
+(define version-sites
+  `((,spec-file . ,(string-append "Version:[ \t]+" version-regexp))
+    (,pkgbuild-file . ,(string-append "pkgver=" version-regexp))
+    (,readme-file . ,(string-append "the same " version-regexp
+                                    ", from the most automated"))
+    (,readme-file . ,(string-append "emacs-tekengrootte~ at " version-regexp))))
+
+(define (read-text file)
+  "Return the whole of FILE as a string, or a task error when it is not there.
+
+A file that cannot be read is an error rather than the empty string: a check
+that reads nothing would pass."
+  (if (file-exists? file)
+      (call-with-input-file file get-string-all)
+      (task-error "no ~a in the working tree" #:args (list file)
+                  #:hint "Run the task from the repository root.")))
+
+(define (write-text file text)
+  "Write TEXT into FILE, replacing what was there."
+  (call-with-output-file file
+    (lambda (port) (display text port))))
+
+(define (captures-in text pattern)
+  "Return what the first group of every PATTERN match captures in TEXT."
+  (let loop ((start 0) (found '()))
+    (let ((match (string-match pattern text start)))
+      (if (not match)
+          (reverse found)
+          (loop (match:end match)
+                (cons (match:substring match 1) found))))))
+
+(define (rewrite-captures text pattern replacement)
+  "Return TEXT with what PATTERN's first group matches replaced.
+
+Only the captured span changes, once per match, so everything around it --
+the spec's alignment, the PKGBUILD's quoting, the README's prose -- is left
+exactly as it was."
+  (let loop ((start 0) (last 0) (pieces '()))
+    (let ((match (string-match pattern text start)))
+      (if (not match)
+          (apply string-append (reverse (cons (substring text last) pieces)))
+          (loop (match:end match)
+                (match:end match 1)
+                (cons replacement
+                      (cons (substring text last (match:start match 1)) pieces)))))))
+
+(define (header-version)
+  "Return the version the package header declares.
+
+That header is the one copy written by hand: Emacs reads it, and so does
+default.nix."
+  (let ((found (captures-in (read-text version-source) header-pattern)))
+    (unless (pair? found)
+      (task-error "~a has no `Version:' header" #:args (list version-source)
+                  #:hint "That header is where the version is written by hand."))
+    (car found)))
+
+(define (changelog-version)
+  "Return the version of the newest Debian changelog entry, or #f."
+  (let ((found (captures-in (read-text changelog-file) changelog-pattern)))
+    (and (pair? found) (car found))))
+
+(define (version-disagreements version)
+  "Return a line for every copy of the version that does not say VERSION."
+  (let ((site-lines
+         (fold (lambda (site lines)
+                 (let* ((file (car site))
+                        (pattern (cdr site))
+                        (found (captures-in (read-text file) pattern)))
+                   (cond
+                    ((null? found)
+                     (append lines
+                             (list (~ "~a: `~a' matches nothing any more"
+                                      file pattern))))
+                    ((every (lambda (copy) (string=? copy version)) found)
+                     lines)
+                    (else
+                     (append lines
+                             (list (~ "~a: ~a" file (string-join found ", "))))))))
+               '()
+               version-sites))
+        (newest (changelog-version)))
+    (cond
+     ((string=? (or newest "") version) site-lines)
+     (newest (append site-lines
+                     (list (~ "~a: the newest entry is ~a"
+                              changelog-file newest))))
+     (else (append site-lines
+                   (list (~ "~a: no entry names a version" changelog-file)))))))
+
+(define (patterns-of file)
+  "Return every version pattern that names a place in FILE."
+  (if (string=? file version-source)
+      (list header-pattern)
+      (map cdr (filter (lambda (site) (string=? (car site) file))
+                       version-sites))))
+
+(define (sync-file file version)
+  "Write VERSION into every place FILE names the version.
+
+Return whether the file had to change."
+  (let ((text (read-text file)))
+    (let ((rewritten (fold (lambda (pattern text)
+                             (rewrite-captures text pattern version))
+                           text
+                           (patterns-of file))))
+      (if (string=? text rewritten)
+          #f
+          (begin (write-text file rewritten) #t)))))
+
+(define (debian-maintainer)
+  "Return the maintainer the Debian control file names."
+  (let ((found (string-match "Maintainer:[ \t]+([^\n]+)"
+                             (read-text control-file))))
+    (unless found
+      (task-error "no `Maintainer:' line in ~a" #:args (list control-file)))
+    (string-trim-both (match:substring found 1))))
+
+(define debian-days
+  #("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
+
+(define debian-months
+  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
+
+(define (debian-date)
+  "Return the current time the way a Debian changelog spells it.
+
+The day and the month come from the vectors above rather than from
+`strftime', whose names follow the locale: a changelog entry is read by
+machines and wants the English names whichever language the release was cut
+in."
+  (let ((now (localtime (current-time))))
+    (format #f "~a, ~2,'0d ~a ~4,'0d ~2,'0d:~2,'0d:~2,'0d ~a"
+            (vector-ref debian-days (vector-ref now 6))
+            (vector-ref now 3)
+            (vector-ref debian-months (vector-ref now 4))
+            (+ 1900 (vector-ref now 5))
+            (vector-ref now 2)
+            (vector-ref now 1)
+            (vector-ref now 0)
+            (strftime "%z" now))))
+
+(define (ensure-changelog-entry version)
+  "Prepend a dated changelog entry for VERSION, unless it is the newest one.
+
+A changelog is history, so an old entry is never rewritten.  The new entry
+says `Sync with upstream', which the release that cuts it makes specific."
+  (if (string=? (or (changelog-version) "") version)
+      (log-info "~a already has an entry for ~a." changelog-file version)
+      (begin
+        (write-text changelog-file
+                    (string-append
+                     (format #f "elpa-tekengrootte (~a-1) unstable; urgency=medium~%~%"
+                             version)
+                     (format #f "  * Sync with upstream ~a.~%~%" version)
+                     (format #f " -- ~a  ~a~%~%" (debian-maintainer) (debian-date))
+                     (read-text changelog-file)))
+        (log-info "Added a ~a entry to ~a." version changelog-file))))
 
 ;; ====== Maak tasks ======
 
@@ -73,9 +281,75 @@
               (when (file-exists? file) (delete-file file)))
             compiled-files))
 
+;; ====== Version tasks ======
+
+(define (version)
+  "Print the version the package header declares."
+  (display (header-version))
+  (newline))
+
+(define (version-check)
+  "Fail unless every copy of the version agrees with the package header."
+  (let* ((version (header-version))
+         (disagreements (version-disagreements version)))
+    (if (null? disagreements)
+        (log-info "Every copy of the version says ~a." version)
+        (task-error "the version is ~a in ~a, but not in every copy"
+                    #:args (list version version-source)
+                    #:hint (string-join disagreements "\n       ")))))
+
+(define* (sync-version #:optional version)
+  "Write the version into the package header and into every copy of it.
+
+VERSION defaults to the one the header already declares, which only re-syncs
+the copies.  The Debian changelog gets a new dated entry rather than a
+rewritten one.  The Arch checksum is not touched: its archive exists only
+once the release tag is pushed, so run `maak pkgsums' after that."
+  (let* ((wanted (or version (header-version)))
+         (files (delete-duplicates (cons version-source (map car version-sites))))
+         (rewritten (filter (lambda (file) (sync-file file wanted)) files)))
+    (if (null? rewritten)
+        (log-info "Every copy of the version already says ~a." wanted)
+        (for-each (lambda (file)
+                    (log-info "Wrote ~a into ~a." wanted file))
+                  rewritten))
+    (ensure-changelog-entry wanted)
+    (version-check)
+    (log-info "Left to you: the release notes in ~a and the v~a tag."
+              readme-file wanted)))
+
+(define (pkgsums)
+  "Rewrite the Arch checksum from the published archive of this version.
+
+The archive is made by the forge from the release tag, so it exists only
+once the tag is pushed: this runs after the release, not as part of it."
+  (let* ((version (header-version))
+         (url (format #f "https://codeberg.org/jjba23/tekengrootte.el/archive/v~a.tar.gz"
+                      version))
+         (archive (format #f "~a/tekengrootte-el-v~a.tar.gz"
+                          (or (getenv "TMPDIR") "/tmp")
+                          version)))
+    (unless (run (list "curl" "--fail" "--silent" "--show-error" "--location"
+                       "--output" archive url)
+                 #:verbose? #t
+                 #:allow-failure? #t)
+      (task-error "no archive at ~a" #:args (list url)
+                  #:hint "The archive appears once the tag is pushed."))
+    (let* ((sum (car (string-split
+                      (capture (string-append "sha256sum " (shell-quote archive)))
+                      #\space)))
+           (text (read-text pkgbuild-file))
+           (rewritten (rewrite-captures text pkgsums-pattern sum)))
+      (if (string=? text rewritten)
+          (log-info "The Arch checksum already matches the v~a archive." version)
+          (begin
+            (write-text pkgbuild-file rewritten)
+            (log-info "Wrote the v~a checksum into ~a." version pkgbuild-file))))))
+
 (define (check)
-  "The whole quality gate, from a clean tree: lint, then test."
+  "The whole quality gate, from a clean tree: version, lint, then test."
   (clean)
+  (version-check)
   (lint)
   (test))
 
@@ -269,13 +543,13 @@ over general advice, and the narrowest rule here wins over the broadest.
 (define (slurp path)
   "Return the whole of @var{path} as a string."
   (call-with-input-file path
-    (lambda (port)
-      (let loop ((lines '())
-                 (line (read-line port)))
-        (if (eof-object? line)
-            (string-concatenate-reverse lines)
-            (loop (cons (string-append line "\n") lines)
-                  (read-line port)))))))
+                        (lambda (port)
+                          (let loop ((lines '())
+                                     (line (read-line port)))
+                            (if (eof-object? line)
+                              (string-concatenate-reverse lines)
+                              (loop (cons (string-append line "\n") lines)
+                                    (read-line port)))))))
 
 (define (fetch-skill name repository commit path)
   "Download one skill pinned at @var{commit}, into the reports tree.
@@ -302,22 +576,22 @@ over general advice, and the narrowest rule here wins over the broadest.
                                                   (list-ref skill 3)))))
                      agent-skills)))
     (call-with-output-file "AGENTS.md"
-      (lambda (port)
-        (display agents-header port)
-        (for-each (lambda (skill)
-                    (format port
-                            "~%## ~a~%~%`~a` at `~a`, `~a`, ~a licensed.~%~%"
-                            (list-ref skill 0)
-                            (list-ref skill 1)
-                            (list-ref skill 2)
-                            (list-ref skill 3)
-                            (list-ref skill 4))
-                    (display (list-ref skill 5) port))
-                  skills)
-        (for-each (lambda (practice)
-                    (newline port)
-                    (display practice port))
-                  agent-practices)))))
+                           (lambda (port)
+                             (display agents-header port)
+                             (for-each (lambda (skill)
+                                         (format port
+                                                 "~%## ~a~%~%`~a` at `~a`, `~a`, ~a licensed.~%~%"
+                                                 (list-ref skill 0)
+                                                 (list-ref skill 1)
+                                                 (list-ref skill 2)
+                                                 (list-ref skill 3)
+                                                 (list-ref skill 4))
+                                         (display (list-ref skill 5) port))
+                                       skills)
+                             (for-each (lambda (practice)
+                                         (newline port)
+                                         (display practice port))
+                                       agent-practices)))))
 ;; ====== Container tasks ======
 
 (define (container-build)

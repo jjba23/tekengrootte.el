@@ -1,19 +1,7 @@
 # tekengrootte.el
 
+# SPDX-License-Identifier: MIT
 # Copyright © Josep Bigorra <jjbigorra@gmail.com>
-
-# tekengrootte.el is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# tekengrootte.el is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with tekengrootte.el.  If not, see <https://www.gnu.org/licenses/>.
 
 # The package of this checkout, built with `melpaBuild' -- the builder MELPA
 # itself uses, which reads the headers, writes the -pkg.el and the autoloads,
@@ -33,8 +21,10 @@ let
   # The version is written once, in the package's own header, which is where
   # Emacs reads it.  Reading it here instead of repeating the literal is what
   # keeps a release to one edit: the derivation cannot fall behind the file.
+  # The header is matched loosely -- how many semicolons lead a comment is the
+  # file's formatting, and maak's own `version-check' reads it the same way.
   headerLines = builtins.filter
-    (line: lib.hasPrefix ";; Version:" line)
+    (line: builtins.match ";;+[[:space:]]*Version:.*" line != null)
     (lib.splitString "\n" (builtins.readFile ./tekengrootte.el));
 in
 melpaBuild {
@@ -42,11 +32,12 @@ melpaBuild {
   version =
     if headerLines == [ ] then
       throw ''
-        tekengrootte.el has no `;; Version:' header, which is where default.nix
+        tekengrootte.el has no `Version:' header, which is where default.nix
         reads the version from.  Put it back, or set the version by hand here.
       ''
     else
-      lib.trim (lib.removePrefix ";; Version:" (builtins.head headerLines));
+      lib.trim (builtins.elemAt
+        (builtins.split "Version:" (builtins.head headerLines)) 2);
 
   # `cleanSource' because the name `melpaBuild' gives this path must not end in
   # `.el': its unpack hook reads that suffix as "a single .el file", and a
@@ -54,14 +45,14 @@ melpaBuild {
   # editor backups out of the store.
   src = lib.cleanSource ./.;
 
-  # The repository carries its tests and its COPYING next to the package; the
+  # The repository carries its tests and its LICENSE next to the package; the
   # package is the .el files at the top level and nothing else.
   files = ''("*.el")'';
 
   meta = {
     description = "Proportionally scaled face sizes";
     homepage = "https://codeberg.org/jjba23/tekengrootte.el";
-    license = lib.licenses.gpl3Plus;
+    license = lib.licenses.mit;
     maintainers = [ lib.maintainers.jjba23 ];
   };
 }

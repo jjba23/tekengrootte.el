@@ -4,7 +4,7 @@
 #+language: en
 #+options: toc:2
 
-[[https://jointhefreeworld.org/ggg/dist/emacs-lisp.svg]] [[https://jointhefreeworld.org/ggg/dist/license-gpl3+.svg]]
+[[https://jointhefreeworld.org/ggg/dist/emacs-lisp.svg]] [[https://jointhefreeworld.org/ggg/dist/license-mit.svg]] [[https://github.com/jjba23/tekengrootte.el/actions/workflows/check.yml][https://github.com/jjba23/tekengrootte.el/actions/workflows/check.yml/badge.svg]]
 
 #+attr_html: :width 160 :alt tekengrootte.el logo
 [[file:logo.svg]]
@@ -42,7 +42,7 @@ Faces are *not* re-applied by the package itself; hook your face-setting functio
 :CUSTOM_ID: ways-to-install
 :END:
 
-/Four routes to the same 0.2.1, from the most automated to the most manual.  They all build the tag this README documents./
+/Four routes to the same 0.2.2, from the most automated to the most manual.  They all build the tag this README documents./
 
 ** From the Guix channel
 :PROPERTIES:
@@ -50,7 +50,7 @@ Faces are *not* re-applied by the package itself; hook your face-setting functio
 :END:
 *GNU Guix* is the functional package manager this project is developed with: a build is a pure function of its inputs, so the same recipe gives the same result everywhere, and an upgrade that goes wrong can be rolled back.
 
-The jointhefreeworld channel carries ~emacs-tekengrootte~ at 0.2.1, so a checkout of the channel is enough — no package definition to write:
+The jointhefreeworld channel carries ~emacs-tekengrootte~ at 0.2.2, so a checkout of the channel is enough — no package definition to write:
 
 #+begin_src shell
 git clone https://codeberg.org/jjba23/guix-jointhefreeworld.git
@@ -142,7 +142,9 @@ An example installation with Elpaca:
            ("C-c f s" . tekengrootte-set-scale-small)
            ("C-c f t" . tekengrootte-set-scale-tiny)
            ("C-c f n" . tekengrootte-set-scale-nano)
-           ("C-c f +" . tekengrootte-set-scale))
+           ("C-c f +" . tekengrootte-set-scale-increase)
+           ("C-c f -" . tekengrootte-set-scale-decrease)
+           ("C-c f 0" . tekengrootte-set-scale))
     :hook (tekengrootte-set-scale-hook . my/set-faces)
     :config
     (my/set-faces))
@@ -192,6 +194,17 @@ Or call ~tekengrootte-set-scale~ interactively, which asks for a size with compl
 Asking for a size that does not exist signals a ~user-error~ and leaves the current scale
 untouched.
 
+Two commands step one size at a time, which is what a key binding usually wants:
+~tekengrootte-set-scale-increase~ and ~tekengrootte-set-scale-decrease~.  They go to the
+nearest size above or below the current scale, so they keep working after you edit
+~tekengrootte-sizes~ or set the scale by hand, and at the largest or smallest size they say
+so and change nothing.
+
+#+begin_src emacs-lisp
+  (global-set-key (kbd "C-c f +") #'tekengrootte-set-scale-increase)
+  (global-set-key (kbd "C-c f -") #'tekengrootte-set-scale-decrease)
+#+end_src
+
 ** Available commands
 :PROPERTIES:
 :CUSTOM_ID: available-commands
@@ -207,6 +220,8 @@ untouched.
 | ~tekengrootte-set-scale-small~    | ~small~          |                0.9 |
 | ~tekengrootte-set-scale-tiny~     | ~tiny~           |                0.8 |
 | ~tekengrootte-set-scale-nano~     | ~nano~           |                0.7 |
+| ~tekengrootte-set-scale-increase~ | the next size up |                  – |
+| ~tekengrootte-set-scale-decrease~ | the next size down |                – |
 | ~tekengrootte-set-scale~          | any of the above |                  – |
 
 * Customizing
@@ -249,6 +264,8 @@ bind a lambda, if you add your own names.
 
 The multiplier currently in use, initially ~1.1~.  Set it through
 ~tekengrootte-set-scale~ rather than ~setq~, so that ~tekengrootte-set-scale-hook~ runs.
+Customize takes the same path: setting the value in ~M-x customize-group RET tekengrootte~
+runs the hook too, and only when the value really changed.
 
 ** ~tekengrootte-set-scale-hook~
 :PROPERTIES:
@@ -266,7 +283,7 @@ Hook run after the scale changed.  Use it to re-apply the faces created with
 The tasks live in [[./maak.scm][maak.scm]] and are run with [[https://codeberg.org/jjba23/maak][maak]]:
 
 #+begin_src shell
-  maak           # the whole gate: clean, lint, then test
+  maak           # the whole gate: version, clean, lint, then test
   maak lint      # byte-compile with warnings as errors, then checkdoc
   maak test      # ERT test suite
   maak compile   # byte-compile the package and its tests
@@ -275,9 +292,33 @@ The tasks live in [[./maak.scm][maak.scm]] and are run with [[https://codeberg.o
   maak --list    # every task
 #+end_src
 
+The version is written by hand once, in the ~Version:~ header of ~tekengrootte.el~, which
+is where Emacs and ~default.nix~ read it.  The spec, the PKGBUILD, the README and the
+Debian changelog cannot read that header, so they carry copies, and these tasks keep them
+in step:
+
+#+begin_src shell
+  maak version                # print the version the header declares
+  maak version-check          # fail unless every copy agrees with it
+  maak sync-version [VERSION] # write VERSION (or the header's) into every copy
+  maak pkgsums                # rewrite the Arch checksum from the release archive
+#+end_src
+
+~maak check~ runs ~version-check~ first, so a tree whose copies disagree cannot pass the
+gate.  A release is ~maak sync-version 0.2.3~, then the release notes and the wording of
+the new changelog entry, a commit, a ~v0.2.3~ tag, and finally ~maak pkgsums~ once the tag
+is pushed: the Arch checksum comes from the archive the forge makes from that tag, so it
+cannot be written any earlier.
+
 ~maak lint~ is a real gate: ~checkdoc-file~ only reports findings and always exits 0, so
 [[./test/tekengrootte-checkdoc.el][test/tekengrootte-checkdoc.el]] counts them and exits non-zero when there is at least one.
 Set ~EMACS~ to compile and test with another Emacs, as in ~EMACS=emacs-29 maak check~.
+
+The same gate runs in CI: [[file:.github/workflows/check.yml][.github/workflows/check.yml]] spells the ~lint~ and
+~test~ commands out for a plain Emacs, so it needs no Guile, and runs them on every push and
+pull request against two Emacs versions.  It also fails when a formatter has put a space
+into an autoload cookie (~;;; ###autoload~), which turns the cookie into a plain comment and
+silently stops the command from being autoloaded.
 
 A single test can be run from Emacs with:
 
@@ -290,6 +331,21 @@ A single test can be run from Emacs with:
 :PROPERTIES:
 :CUSTOM_ID: news
 :END:
+
+** Unreleased
+:PROPERTIES:
+:CUSTOM_ID: unreleased
+:END:
+
+- Relicensed from GPL-3.0-or-later to MIT.  ~LICENSE~ carries the MIT text and
+  every header, packaging recipe and package label now names MIT.
+- Added a GitHub Actions workflow, ~.github/workflows/check.yml~, which runs the
+  same byte-compile, checkdoc and ERT gate as ~maak check~ on every push and pull
+  request, against two Emacs versions.
+- Added ~tekengrootte-set-scale-increase~ and ~tekengrootte-set-scale-decrease~,
+  which step to the nearest size above or below the current scale.
+- Setting ~tekengrootte-scale~ through Customize now runs
+  ~tekengrootte-set-scale-hook~, as ~tekengrootte-set-scale~ always did.
 
 ** 0.2.0
 :PROPERTIES:
@@ -312,4 +368,4 @@ A single test can be run from Emacs with:
 :CUSTOM_ID: license
 :END:
 
-GPL-3.0-or-later.  See [[./COPYING][COPYING]].
+MIT.  See [[./LICENSE][LICENSE]].

@@ -19,7 +19,7 @@ Name:           emacs-tekengrootte
 Version:        0.2.2
 Release:        0
 Summary:        Proportionally scaled face sizes for Emacs
-License:        GPL-3.0-or-later
+License:        MIT
 URL:            https://codeberg.org/jjba23/tekengrootte.el
 Source0:        tekengrootte.el-%{version}.tar.gz
 BuildRequires:  emacs
@@ -43,7 +43,7 @@ install -m 0644 tekengrootte.el tekengrootte.elc %{buildroot}%{_datadir}/emacs/s
 emacs -Q --batch -L . -L test -l test/tekengrootte-tests.el -f ert-run-tests-batch-and-exit
 
 %files
-%license COPYING
+%license LICENSE
 %doc README.org
 %{_datadir}/emacs/site-lisp/tekengrootte.el
 %{_datadir}/emacs/site-lisp/tekengrootte.elc
