@@ -1,3 +1,10 @@
+elpa-tekengrootte (0.4.4-1) unstable; urgency=medium
+
+  * Sync with upstream 0.4.4.
+  * The funding file carries a custom Buy Me a Coffee URL.
+
+ -- Josep Bigorra <jjbigorra@gmail.com>  Tue, 10 Nov 2026 21:02:07 +0100
+
 elpa-tekengrootte (0.4.3-1) unstable; urgency=medium
 
   * Sync with upstream 0.4.3.
