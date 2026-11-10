@@ -5,7 +5,7 @@
 
 # Maintainer: Josep Bigorra <jjbigorra@gmail.com>
 pkgname=emacs-tekengrootte
-pkgver=0.4.0
+pkgver=0.4.3
 pkgrel=1
 pkgdesc="Proportionally scaled face sizes for Emacs"
 arch=('any')

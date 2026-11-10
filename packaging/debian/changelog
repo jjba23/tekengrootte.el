@@ -1,3 +1,9 @@
+elpa-tekengrootte (0.4.3-1) unstable; urgency=medium
+
+  * Sync with upstream 0.4.3.
+
+ -- Josep Bigorra <jjbigorra@gmail.com>  Tue, 10 Nov 2026 20:34:56 +0100
+
 elpa-tekengrootte (0.4.0-1) unstable; urgency=medium
 
   * New upstream release.

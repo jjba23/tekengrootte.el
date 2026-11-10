@@ -16,7 +16,7 @@
 #
 
 Name:           emacs-tekengrootte
-Version:        0.4.0
+Version:        0.4.3
 Release:        0
 Summary:        Proportionally scaled face sizes for Emacs
 License:        MIT
